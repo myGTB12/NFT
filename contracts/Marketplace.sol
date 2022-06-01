@@ -42,7 +42,6 @@ contract Marketplace {
     function listERC721Item(ERC721_Test _token, uint256 _price, uint256 _tokenId) public{
         require(_price > 0, "Price must greater than zero");
         itemCount++;
-        _token.setApprovalForAll(address(this), true);
         _token.approve(address(this), _tokenId);
         _token.transferFrom(msg.sender, address(transferProxy), _tokenId);
         
