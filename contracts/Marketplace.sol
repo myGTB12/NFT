@@ -6,8 +6,11 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "./TransferProxy.sol/";
 
 contract Marketplace {
-    uint public itemCount;  
-    TransferProxy transferProxy = new TransferProxy();
+    uint public itemCount; 
+    TransferProxy transferProxy; 
+    constructor(TransferProxy _transferProxy){
+        transferProxy = _transferProxy;
+    }
 
     event List(
         uint itemId,
@@ -26,7 +29,7 @@ contract Marketplace {
     ); 
 
     struct NFTERC721Item{
-        ERC721 erc721Token;
+        ERC721_Test erc721Token;
         uint itemId;
         uint tokenId;
         uint price;
@@ -36,10 +39,11 @@ contract Marketplace {
 
     mapping(uint => NFTERC721Item) public _NFTItems;
     
-    function listERC721Item(ERC721 _token, uint256 _price, uint256 _tokenId) public{
+    function listERC721Item(ERC721_Test _token, uint256 _price, uint256 _tokenId) public{
         require(_price > 0, "Price must greater than zero");
         itemCount++;
         _token.setApprovalForAll(address(this), true);
+        _token.approve(address(this), _tokenId);
         _token.transferFrom(msg.sender, address(transferProxy), _tokenId);
         
         _NFTItems[itemCount] = NFTERC721Item(
@@ -61,7 +65,6 @@ contract Marketplace {
         // update item to sold
         item.sold = true;
         // transfer nft to buyer
-        item.erc721Token.setApprovalForAll(address(this), true);
         transferProxy.erc721safeTransferFrom(item.erc721Token, address(transferProxy), msg.sender, item.tokenId);
         // emit Bought event
         emit Bought(
@@ -73,7 +76,7 @@ contract Marketplace {
             msg.sender
         );
     }
-    function _msgSender() public view virtual returns (address) {
-        return address(this);
+    function check() public view returns(address transfer){
+        return address(transferProxy);
     }
 }
