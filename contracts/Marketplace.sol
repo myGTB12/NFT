@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "./TransferProxy.sol/";
-
+import "./TransferProxy.sol";
+import "./VerifySignature.sol";
+import "./ERC721_Test.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 contract Marketplace {
-    uint public itemCount; 
+    uint public itemCount;
+    VerifySignature verifySignature; 
     TransferProxy transferProxy; 
     constructor(TransferProxy _transferProxy){
         transferProxy = _transferProxy;
@@ -42,7 +45,6 @@ contract Marketplace {
     function listERC721Item(ERC721_Test _token, uint256 _price, uint256 _tokenId) public{
         require(_price > 0, "Price must greater than zero");
         itemCount++;
-        _token.approve(address(this), _tokenId);
         _token.transferFrom(msg.sender, address(transferProxy), _tokenId);
         
         _NFTItems[itemCount] = NFTERC721Item(
@@ -53,12 +55,15 @@ contract Marketplace {
             payable(msg.sender),
             false
         );
+        bytes32 _messageHash = verifySignature.getMessageHash(_token, _price, _tokenId, _NFTItems[itemCount].seller);
+        verifySignature.getEthSignedMessageHash(_messageHash);
         emit List(itemCount, address(_token), _tokenId, _price, msg.sender);
     }
     function purchaseERC721Item(uint _itemId) external payable {
         NFTERC721Item storage item = _NFTItems[_itemId];
         require(_itemId > 0 && _itemId <= itemCount, "item doesn't exist");
         require(!item.sold, "item already sold");
+
         // pay seller and feeAccount
         item.seller.transfer(item.price);
         // update item to sold

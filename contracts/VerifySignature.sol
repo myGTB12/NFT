@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./ERC721_Test.sol";
 //message to sign
 //hash(message)
 //sign(hash(message), private key) | offchain
 //ecrecover(hash(message), signture) == signer
 contract VerifySignature {
     function getMessageHash(
-        string memory _message
+        ERC721_Test tokenerc721_test,
+        uint _price,
+        uint _tokenId,
+        address _seller
     ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_message));
+        return keccak256(abi.encodePacked(tokenerc721_test, _price, _tokenId, _seller));
     }
 
     function getEthSignedMessageHash(bytes32 _messageHash)
@@ -25,10 +29,12 @@ contract VerifySignature {
 
     function verify(
         address _signer,
-        string memory _message,
+        ERC721_Test erc721TokenTest,
+        uint _price,
+        uint _tokenId,
         bytes memory signature
     ) public pure returns (bool) {
-        bytes32 messageHash = getMessageHash(_message);
+        bytes32 messageHash = getMessageHash(erc721TokenTest, _price, _tokenId, _signer);
         bytes32 ethSignedMessageHash = getEthSignedMessageHash(messageHash);
 
         return recoverSigner(ethSignedMessageHash, signature) == _signer;
