@@ -47,6 +47,8 @@ contract Marketplace {
         itemCount++;
         _token.transferFrom(msg.sender, address(transferProxy), _tokenId);
         
+        bytes32 _messageHash = verifySignature.getMessageHash(_token, _price, _tokenId, _NFTItems[itemCount].seller);
+        verifySignature.getEthSignedMessageHash(_messageHash);
         _NFTItems[itemCount] = NFTERC721Item(
             _token,
             itemCount,
@@ -55,8 +57,8 @@ contract Marketplace {
             payable(msg.sender),
             false
         );
-        bytes32 _messageHash = verifySignature.getMessageHash(_token, _price, _tokenId, _NFTItems[itemCount].seller);
-        verifySignature.getEthSignedMessageHash(_messageHash);
+        // bytes32 _messageHash = verifySignature.getMessageHash(_token, _price, _tokenId, _NFTItems[itemCount].seller);
+        // verifySignature.getEthSignedMessageHash(_messageHash);
         emit List(itemCount, address(_token), _tokenId, _price, msg.sender);
     }
     function purchaseERC721Item(uint _itemId) external payable {
