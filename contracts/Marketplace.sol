@@ -38,6 +38,7 @@ contract Marketplace {
         uint price;
         address payable seller;
         bool sold;
+        bytes signedMessage;
     }
 
     mapping(uint => NFTERC721Item) public _NFTItems;
@@ -48,14 +49,15 @@ contract Marketplace {
         _token.transferFrom(msg.sender, address(transferProxy), _tokenId);
         
         bytes32 _messageHash = verifySignature.getMessageHash(_token, _price, _tokenId, _NFTItems[itemCount].seller);
-        verifySignature.getEthSignedMessageHash(_messageHash);
+        bytes32 ethSignedMessage = verifySignature.getEthSignedMessageHash(_messageHash);
         _NFTItems[itemCount] = NFTERC721Item(
             _token,
             itemCount,
             _tokenId,
             _price,
             payable(msg.sender),
-            false
+            false,
+            ethSignedMessage
         );
         // bytes32 _messageHash = verifySignature.getMessageHash(_token, _price, _tokenId, _NFTItems[itemCount].seller);
         // verifySignature.getEthSignedMessageHash(_messageHash);
@@ -66,11 +68,13 @@ contract Marketplace {
         require(_itemId > 0 && _itemId <= itemCount, "item doesn't exist");
         require(!item.sold, "item already sold");
 
+        
         // pay seller and feeAccount
         item.seller.transfer(item.price);
         // update item to sold
         item.sold = true;
         // transfer nft to buyer
+
         transferProxy.erc721safeTransferFrom(item.erc721Token, address(transferProxy), msg.sender, item.tokenId);
         // emit Bought event
         emit Bought(
